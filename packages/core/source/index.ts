@@ -146,14 +146,28 @@ export default class Engine<Name extends string = string> {
 				if (value && typeof value === 'object' && 'nodeKind' in value) {
 					return [key, value as ASTNode]
 				}
-				const parsedValue =
-					value && typeof value === 'object' && 'nodeKind' in value
-						? (value as ASTNode)
-						: this.parse(value, {
-								dottedName: `situation [${key}]`,
-								parsedRules: {},
-								...this.options,
-						  })
+				if (value && typeof value === 'object' && 'nodeKind' in value) {
+					return [key, value as ASTNode]
+				}
+
+				const dottedName = `$SITUATION ${key}`
+				Object.keys(this.parsedRules)
+					.filter((k) => k.startsWith(dottedName))
+					.forEach((k) => delete this.parsedRules[k])
+				this.parsedRules[dottedName] = this.parse(
+					{ nom: dottedName },
+					{
+						dottedName,
+						parsedRules: this.parsedRules,
+						...this.options,
+					}
+				)
+				const parsedValue = this.parse(value, {
+					dottedName,
+					parsedRules: this.parsedRules,
+					...this.options,
+				})
+
 				return [key, parsedValue]
 			})
 		)
@@ -186,7 +200,7 @@ export default class Engine<Name extends string = string> {
 	getParsedRules(): ParsedRules<Name> {
 		return Object.fromEntries(
 			Object.entries(this.parsedRules).filter(
-				([name]) => !name.includes('$PRIVÉE ')
+				([name]) => !name.includes('$PRIVÉE ') && !name.startsWith('$SITUATION')
 			)
 		) as ParsedRules<Name>
 	}
@@ -209,9 +223,13 @@ export default class Engine<Name extends string = string> {
 
 		let parsedNode: ASTNode
 		if (!value || typeof value !== 'object' || !('nodeKind' in value)) {
+			Object.keys(this.parsedRules)
+				.filter((k) => k.startsWith(`$EVALUATION`))
+				.forEach((k) => delete this.parsedRules[k])
+
 			parsedNode = this.parse(value, {
-				dottedName: 'evaluation',
-				parsedRules: {},
+				dottedName: '$EVALUATION',
+				parsedRules: this.parsedRules,
 				...this.options,
 			})
 		} else {
