@@ -94,7 +94,7 @@ export type ParsedRules<Name extends string> = Record<
 
 export default class Engine<Name extends string = string> {
 	parsedRules: ParsedRules<Name>
-	parsedSituation: Record<string, ASTNode> = {}
+	parsedRulesWithoutSituation: ParsedRules<string>
 	replacements: Record<string, Array<ReplacementRule>> = {}
 	cache: Cache = emptyCache()
 	options: Options
@@ -124,6 +124,7 @@ export default class Engine<Name extends string = string> {
 			this.options
 		)
 		this.parsedRules = parsedRules
+		this.parsedRulesWithoutSituation = this.parsedRules
 		this.ruleUnits = ruleUnits
 		this.rulesDependencies = rulesDependencies
 		this.replacements = getReplacements(this.parsedRules)
@@ -141,36 +142,19 @@ export default class Engine<Name extends string = string> {
 		situation: Partial<Record<Name, PublicodesExpression | ASTNode>> = {}
 	) {
 		this.resetCache()
-		this.parsedSituation = Object.fromEntries(
-			Object.entries(situation).map(([key, value]) => {
-				if (value && typeof value === 'object' && 'nodeKind' in value) {
-					return [key, value as ASTNode]
-				}
-				if (value && typeof value === 'object' && 'nodeKind' in value) {
-					return [key, value as ASTNode]
-				}
-
-				const dottedName = `$SITUATION ${key}`
-				Object.keys(this.parsedRules)
-					.filter((k) => k.startsWith(dottedName))
-					.forEach((k) => delete this.parsedRules[k])
-				this.parsedRules[dottedName] = this.parse(
-					{ nom: dottedName },
-					{
-						dottedName,
-						parsedRules: this.parsedRules,
-						...this.options,
-					}
-				)
-				const parsedValue = this.parse(value, {
-					dottedName,
-					parsedRules: this.parsedRules,
-					...this.options,
-				})
-
-				return [key, parsedValue]
-			})
+		const { parsedRules } = parsePublicodes(
+			{
+				$SITUATION: {
+					valeur: 'oui',
+					remplace: Object.entries(situation).map(([dottedName, value]) => ({
+						règle: `${dottedName} . $SITUATION`,
+						par: value as PublicodesExpression,
+					})),
+				},
+			},
+			{ ...this.options, parsedRules: { ...this.parsedRulesWithoutSituation } }
 		)
+		this.parsedRules = parsedRules
 		return this
 	}
 
@@ -200,7 +184,7 @@ export default class Engine<Name extends string = string> {
 	getParsedRules(): ParsedRules<Name> {
 		return Object.fromEntries(
 			Object.entries(this.parsedRules).filter(
-				([name]) => !name.includes('$PRIVÉE ') && !name.startsWith('$SITUATION')
+				([name]) => !name.includes('$PRIVÉE ') && !name.endsWith('$SITUATION')
 			)
 		) as ParsedRules<Name>
 	}
@@ -223,12 +207,8 @@ export default class Engine<Name extends string = string> {
 
 		let parsedNode: ASTNode
 		if (!value || typeof value !== 'object' || !('nodeKind' in value)) {
-			Object.keys(this.parsedRules)
-				.filter((k) => k.startsWith(`$EVALUATION`))
-				.forEach((k) => delete this.parsedRules[k])
-
 			parsedNode = this.parse(value, {
-				dottedName: '$EVALUATION',
+				dottedName: 'evaluation',
 				parsedRules: this.parsedRules,
 				...this.options,
 			})
@@ -284,8 +264,8 @@ export default class Engine<Name extends string = string> {
 		const newEngine = new Engine<Name>()
 		newEngine.options = this.options
 		newEngine.parsedRules = this.parsedRules
+		newEngine.parsedRulesWithoutSituation = this.parsedRulesWithoutSituation
 		newEngine.replacements = this.replacements
-		newEngine.parsedSituation = this.parsedSituation
 		newEngine.ruleUnits = this.ruleUnits
 		newEngine.cache = this.cache
 		newEngine.subEngineId = this.subEngines.length

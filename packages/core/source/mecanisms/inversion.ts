@@ -1,5 +1,5 @@
 import { EvaluationFunction } from '..'
-import { ConstantNode, Unit } from '../AST/types'
+import { ASTNode, ConstantNode, Unit } from '../AST/types'
 import { mergeMissing } from '../evaluation'
 import { registerEvaluationFunction } from '../evaluationFunctions'
 import { convertNodeToUnit } from '../nodeUnits'
@@ -33,7 +33,8 @@ export const evaluateInversion: EvaluationFunction<'inversion'> = function (
 ) {
 	const inversionGoal = node.explanation.inversionCandidates.find(
 		(candidate) =>
-			this.parsedSituation[candidate.dottedName as string] != undefined
+			this.evaluate(`${candidate.dottedName as string} . $SITUATION`)
+				.nodeValue != null
 	)
 
 	if (inversionGoal === undefined) {
@@ -52,11 +53,20 @@ export const evaluateInversion: EvaluationFunction<'inversion'> = function (
 		}
 	}
 	const evaluatedInversionGoal = this.evaluate(inversionGoal)
-	const unit = 'unit' in node ? node.unit : evaluatedInversionGoal.unit
 	const originalCache = this.cache
-	const originalSituation = { ...this.parsedSituation }
+	const situationInversionGoal =
+		this.parsedRules[`${inversionGoal.dottedName as string} . $SITUATION`]
+
+	const situationRuleToInverse =
+		this.parsedRules[`${node.explanation.ruleToInverse as string} . $SITUATION`]
+	const unit =
+		'unit' in situationInversionGoal && situationInversionGoal.unit
+			? situationInversionGoal.unit
+			: { denominator: [], numerator: [] }
+	const originalValue = situationInversionGoal
 	let inversionNumberOfIterations = 0
-	delete this.parsedSituation[inversionGoal.dottedName as string]
+	situationInversionGoal.nodeValue = undefined
+
 	const evaluateWithValue = (n: number) => {
 		inversionNumberOfIterations++
 		this.resetCache()
@@ -67,21 +77,16 @@ export const evaluateInversion: EvaluationFunction<'inversion'> = function (
 				...originalCache._meta.traversedVariablesStack.map((s) => new Set(s)),
 			],
 		}
-		this.parsedSituation[node.explanation.ruleToInverse] = {
-			unit: unit,
-			nodeKind: 'unité',
-			explanation: {
-				nodeKind: 'constant',
-				nodeValue: n,
-				type: 'number',
-			} as ConstantNode,
-		} as UnitéNode
+		situationRuleToInverse.nodeValue = n
 
-		return convertNodeToUnit(unit, this.evaluate(inversionGoal))
+		return this.evaluate({
+			nodeKind: 'unité',
+			unit,
+			explanation: inversionGoal,
+		})
 	}
 
-	const goal = convertNodeToUnit(unit, evaluatedInversionGoal)
-		.nodeValue as number
+	const goal = evaluatedInversionGoal.nodeValue as number
 	let nodeValue: number | undefined | undefined = undefined
 
 	// We do some blind attempts here to avoid using the default minimum and
@@ -146,7 +151,7 @@ export const evaluateInversion: EvaluationFunction<'inversion'> = function (
 
 	// Reset cache
 	this.cache = { ...originalCache, _meta: this.cache._meta }
-	this.parsedSituation = originalSituation
+	situationInversionGoal.nodeValue = originalValue
 
 	// // Uncomment to display the two attempts and their result
 	// console.table([{ x: x1, y: y1 }, { x: x2, y: y2 }])

@@ -274,15 +274,6 @@ function inferRulesUnit(parsedRules, rulesDependencies) {
 			case 'rule':
 			case 'arrondi':
 				return inferNodeUnitAndCache(node.explanation.valeur)
-			case 'dans la situation':
-				return {
-					isNullable:
-						node.explanation.isNullable ??
-						inferNodeUnitAndCache(node.explanation.valeur).isNullable,
-					type:
-						inferNodeUnitAndCache(node.explanation.valeur).type ??
-						node.explanation.defaultType,
-				}
 			case 'unité':
 			case 'simplifier unité':
 				return inferNodeUnitAndCache(node.explanation)

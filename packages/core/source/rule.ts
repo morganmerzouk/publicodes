@@ -1,4 +1,4 @@
-import Engine from '.'
+import Engine, { PublicodesExpression } from '.'
 import {
 	ASTNode,
 	EvaluatedNode,
@@ -35,8 +35,8 @@ export type Rule = {
 	type?: string
 	'possiblement non applicable'?: 'oui'
 	note?: string
-	remplace?: RendNonApplicable | Array<RendNonApplicable>
-	'rend non applicable'?: Remplace | Array<string>
+	'rend non applicable'?: RendNonApplicable | Array<RendNonApplicable>
+	remplace?: Remplace | Array<Remplace>
 	suggestions?: Record<string, string | number | Record<string, unknown>>
 	références?: { [source: string]: string }
 	API?: string
@@ -47,7 +47,7 @@ export type Rule = {
 type Remplace =
 	| {
 			règle: string
-			par?: Record<string, unknown> | string | number
+			par?: PublicodesExpression
 			dans?: Array<string> | string
 			'sauf dans'?: Array<string> | string
 	  }
@@ -94,20 +94,29 @@ export default function parseRule(
 			Object.entries(rawRule).filter(([key]) => mecanismKeys.includes(key))
 		),
 		...('formule' in rawRule && { valeur: rawRule.formule }),
-		'dans la situation': {
-			clé: dottedName,
-			'possiblement non applicable': rawRule['possiblement non applicable'],
-			'type par défaut':
-				// TODO : this could be infered by a good type inference algorithm. And it should be documented.
-				(!('type' in rawRule) && rawRule.question && !rawRule.unité) ||
-				rawRule.type === 'booléen'
-					? 'boolean'
-					: ['paragraphe', 'texte'].includes(rawRule.type ?? '') ||
-					  rawRule['une possibilité'] ||
-					  rawRule.formule?.['une possibilité'] ||
-					  rawRule.valeur?.['une possibilité']
-					? 'string'
-					: 'number',
+		avec: {
+			...(!dottedName.endsWith('$SITUATION')
+				? {
+						$SITUATION: {
+							isNullable: rawRule['possiblement non applicable'] === 'oui',
+							type:
+								(!('type' in rawRule) && rawRule.question && !rawRule.unité) ||
+								// TODO : this could be infered by a good type inference algorithm. And it should be documented.
+								rawRule.type === 'booléen'
+									? 'boolean'
+									: ['paragraphe', 'texte'].includes(rawRule.type ?? '') ||
+									  rawRule['une possibilité'] ||
+									  rawRule.formule?.['une possibilité'] ||
+									  rawRule.valeur?.['une possibilité']
+									? 'string'
+									: 'number',
+							nodeValue: undefined,
+							nodeKind: 'constant',
+							missingVariable: {},
+						},
+				  }
+				: {}),
+			...(rawRule.avec ?? {}),
 		},
 	}
 
