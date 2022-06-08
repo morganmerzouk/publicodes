@@ -135,18 +135,6 @@ export default function parseRule(
 		),
 	}
 
-	Object.entries(rawRule.avec ?? {}).forEach(([name, rule]) =>
-		parse(
-			rule == undefined
-				? {
-						nom: name,
-				  }
-				: typeof rule === 'object'
-				? { ...rule, nom: name }
-				: { valeur: rule, nom: name },
-			ruleContext
-		)
-	)
 	context.parsedRules[dottedName] = {
 		dottedName,
 		replacements: [

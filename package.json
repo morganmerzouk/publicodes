@@ -14,7 +14,7 @@
 		"lint:prettier": "run prettier --check \"**/*.{js,jsx,ts,tsx,yaml,yml}\"",
 		"lint:prettier:fix": "run lint:prettier --write",
 		"build": "yarn workspaces foreach --topological-dev -pi --exclude website run build",
-		"start": "yarn workspaces foreach -pi run start",
+		"start": "yarn workspaces foreach --exclude \"@publicodes/api\" -pi run start",
 		"clean": "yarn workspaces foreach run clean"
 	},
 	"devDependencies": {

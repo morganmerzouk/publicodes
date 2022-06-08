@@ -132,6 +132,8 @@ export const traverseASTNode: TraverseFunction<NodeKind> = (fn, node) => {
 		case 'reference':
 		case 'constant':
 			return traverseLeafNode(fn, node)
+		case 'avec':
+			return traverseAvecNode(fn, node)
 		case 'arrondi':
 			return traverseArrondiNode(fn, node)
 		case 'simplifier unité':
@@ -206,6 +208,14 @@ const traverseRuleNode: TraverseFunction<'rule'> = (fn, node) => ({
 			? fn(node.explanation.nullableParent)
 			: undefined,
 		parents: node.explanation.parents.map(fn),
+		valeur: fn(node.explanation.valeur),
+	},
+})
+
+const traverseAvecNode: TraverseFunction<'avec'> = (fn, node) => ({
+	...node,
+	explanation: {
+		avec: node.explanation.avec.map(fn),
 		valeur: fn(node.explanation.valeur),
 	},
 })

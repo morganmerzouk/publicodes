@@ -184,7 +184,11 @@ export default class Engine<Name extends string = string> {
 	}
 
 	getParsedRules(): ParsedRules<Name> {
-		return this.parsedRules
+		return Object.fromEntries(
+			Object.entries(this.parsedRules).filter(
+				([name]) => !name.includes('$PRIVÉE ')
+			)
+		) as ParsedRules<Name>
 	}
 
 	getOptions(): Options {

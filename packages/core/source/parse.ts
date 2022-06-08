@@ -5,6 +5,7 @@ import grammar from './grammar'
 import abattement from './mecanisms/abattement'
 import applicable from './mecanisms/applicable'
 import arrondi from './mecanisms/arrondi'
+import avec from './mecanisms/avec'
 import barème from './mecanisms/barème'
 import { decompose } from './mecanisms/composantes'
 import condition from './mecanisms/condition'
@@ -177,6 +178,7 @@ ${e.message}`
 
 // Chainable mecanisme in their composition order (first one is applyied first)
 const chainableMecanisms = [
+	avec,
 	applicable,
 	nonApplicable,
 	arrondi,

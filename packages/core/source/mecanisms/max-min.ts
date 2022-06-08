@@ -11,13 +11,17 @@ export const parseMaximumDe = createParseInlinedMecanismWithArray(
 			(acc, value) => ({
 				condition: {
 					si: {
-						'est non applicable': value,
+						'est non applicable': '$PRIVÉE valeur',
 					},
-					alors: acc,
+					alors: '$PRIVÉE acc',
 					sinon: {
-						valeur: value,
-						plancher: acc,
+						valeur: '$PRIVÉE valeur',
+						plancher: '$PRIVÉE acc',
 					},
+				},
+				avec: {
+					'$PRIVÉE acc': acc,
+					'$PRIVÉE valeur': value,
 				},
 			}),
 			notApplicableNode
@@ -25,7 +29,7 @@ export const parseMaximumDe = createParseInlinedMecanismWithArray(
 )
 
 export const parseMinimumDe = createParseInlinedMecanismWithArray(
-	'le maximum de',
+	'le minimum de',
 	{
 		valeur: { type: 'liste' },
 	},
@@ -34,13 +38,17 @@ export const parseMinimumDe = createParseInlinedMecanismWithArray(
 			(acc, value) => ({
 				condition: {
 					si: {
-						'est non applicable': value,
+						'est non applicable': '$PRIVÉE valeur',
 					},
-					alors: acc,
+					alors: '$PRIVÉE acc',
 					sinon: {
-						valeur: value,
-						plafond: acc,
+						valeur: '$PRIVÉE valeur',
+						plafond: '$PRIVÉE acc',
 					},
+				},
+				avec: {
+					'$PRIVÉE acc': acc,
+					'$PRIVÉE valeur': value,
 				},
 			}),
 			notApplicableNode

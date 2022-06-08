@@ -60,3 +60,14 @@ avec dans avec:
         yum: 5
   exemples:
     - valeur attendue: 20
+
+avec en dehors d'une règle:
+  valeur:
+    le maximum de:
+      - a
+      - b
+    avec:
+      a: 10
+      b: 8
+  exemples:
+    - valeur attendue: 10

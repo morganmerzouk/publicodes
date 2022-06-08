@@ -238,7 +238,8 @@ function inferRulesUnit(parsedRules, rulesDependencies) {
 					isNullable: node.nodeValue === null,
 					type: node.type,
 				}
-
+			case 'avec':
+				return inferNodeUnitAndCache(node.explanation.valeur)
 			case 'operation':
 				return {
 					isNullable: ['<', '<=', '>', '>=', '/', '*'].includes(

@@ -1,4 +1,5 @@
 import { ArrondiNode } from '../mecanisms/arrondi'
+import { AvecNode } from '../mecanisms/avec'
 import { BarèmeNode } from '../mecanisms/barème'
 import { ConditionNode } from '../mecanisms/condition'
 import { DuréeNode } from '../mecanisms/durée'
@@ -50,6 +51,7 @@ export type ASTNode = (
 	| ConditionNode
 	| ConstantNode
 	| ReplacementRule
+	| AvecNode
 	| TexteNode
 ) & {
 	isDefault?: boolean

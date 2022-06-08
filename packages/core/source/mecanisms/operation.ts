@@ -139,7 +139,7 @@ const evaluate: EvaluationFunction<'operation'> = function (node) {
 			: [a, b].every(
 					(value) =>
 						typeof value === 'string' &&
-						value.match?.(/[\d]{2}\/[\d]{2}\/[\d]{4}/)
+						value.match?.(/^[\d]{2}\/[\d]{2}\/[\d]{4}$/)
 			  )
 			? operatorFunction(convertToDate(a as string), convertToDate(b as string))
 			: operatorFunction(a, b)
