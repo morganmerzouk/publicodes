@@ -32,6 +32,7 @@
 		"chai": "^4.2.0",
 		"dedent-js": "1.0.1",
 		"intl": "^1.2.5",
+		"mitata": "^0.1.6",
 		"mocha": "^9.2.0",
 		"moo": "^0.5.1",
 		"nearley": "^2.19.2",
@@ -39,7 +40,7 @@
 		"sinon": "^12.0.1",
 		"sinon-chai": "^3.7.0",
 		"ts-node": "^10.9.1",
-		"tsup": "^6.5.0",
+		"tsup": "^7.2.0",
 		"typescript": "^4.9.3"
 	},
 	"scripts": {
@@ -50,7 +51,8 @@
 		"prepack": "run build:ifNeeded",
 		"test:type": "run build:grammar && run tsc",
 		"test": "run build:grammar && mocha \"./test/**/*.test.{js,ts}\"",
-		"clean": "rimraf dist node_modules source/grammar.js .deps.json"
+		"clean": "rimraf dist node_modules source/grammar.js .deps.json",
+		"bench": "node ./bench/index.js"
 	},
 	"peerDependencies": {
 		"@types/mocha": "^9.0.0"

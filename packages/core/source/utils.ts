@@ -33,3 +33,18 @@ export function mergeWithArray<K extends string | number | symbol, T>(
 		obj1
 	) as Partial<Record<K, Array<T>>>
 }
+
+export function execWhenIdle<Fn extends (...args: any[]) => any>(
+	cb: Fn,
+	...args: Parameters<Fn>
+): Promise<ReturnType<Fn>> {
+	return new Promise((resolve) => {
+		if (typeof requestIdleCallback !== 'undefined') {
+			requestIdleCallback(() => resolve(cb(...args)))
+		} else if (typeof setImmediate !== 'undefined') {
+			setImmediate(() => resolve(cb(...args)))
+		} else {
+			setTimeout(() => resolve(cb(...args)), 0)
+		}
+	})
+}

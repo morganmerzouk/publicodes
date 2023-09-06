@@ -1,0 +1,46 @@
+année de création: 2023
+statut: '"SASU"' # youpi pas de doubles guillemets
+chiffre affaires: 20000 €/mois
+charges: 1 €/mois * ((1 + 2) * 3) * 100
+
+impôt sur les sociétés:
+  barème:
+    assiette: bénéfice
+    tranches:
+      - taux: 15%
+        plafond: 38120 €/an
+      - taux: 25%
+
+bénéfice: chiffre affaires - charges - salaire . total
+bénéfice . net: bénéfice - impôt sur les sociétés
+
+dividendes:
+dividendes . brut: bénéfice . net
+dividendes . net: brut - prélèvement forfaitaire unique
+dividendes . prélèvement forfaitaire unique:
+  produit:
+    assiette: brut
+    taux: 30%
+
+proportion salaire: 50%
+salaire:
+salaire . total: chiffre affaires * proportion salaire
+salaire . net: total - charges
+salaire . charges:
+  produit:
+    assiette: total
+    taux:
+      variations:
+        - si: éligible acre
+          alors: 20%
+        - sinon: 40%
+
+salaire . éligible acre:
+  toutes ces conditions:
+    - année de création >= 2022
+    - oui
+    - une de ces conditions:
+        - statut = "SASU"
+        - statut = "EURL"
+
+revenu net après impôt: salaire . net + dividendes . net

@@ -1,15 +1,16 @@
 import { makeASTVisitor } from './AST/index'
 import { type ASTNode, type EvaluatedNode, type NodeKind } from './AST/types'
-import { experimentalRuleWarning, PublicodesError } from './error'
+import { PublicodesError, experimentalRuleWarning } from './error'
 import { evaluationFunctions } from './evaluationFunctions'
 import parsePublicodes, {
 	Context,
+	RawPublicodes,
 	copyContext,
 	createContext,
-	RawPublicodes,
 } from './parsePublicodes'
 import { type Rule, type RuleNode } from './rule'
 import * as utils from './ruleUtils'
+import { execWhenIdle } from './utils'
 
 const emptyCache = (): Cache => ({
 	_meta: {
@@ -52,20 +53,20 @@ export type EvaluationOptions = Partial<{
 }>
 
 export {
-	makeASTTransformer as transformAST,
 	reduceAST,
+	makeASTTransformer as transformAST,
 	traverseASTNode,
 } from './AST/index'
 export { type Evaluation, type Unit } from './AST/types'
-export { isPublicodesError, PublicodesError } from './error'
+export { PublicodesError, isPublicodesError } from './error'
 export { capitalise0, formatValue } from './format'
 export { simplifyNodeUnit } from './nodeUnits'
+export { parseExpression, type ExprAST } from './parseExpression'
 export { default as serializeEvaluation } from './serializeEvaluation'
 export { parseUnit, serializeUnit } from './units'
-export { parseExpression, type ExprAST } from './parseExpression'
 export { parsePublicodes, utils }
 
-export { type Rule, type RuleNode, type ASTNode, type EvaluatedNode }
+export { type ASTNode, type EvaluatedNode, type Rule, type RuleNode }
 
 export type PublicodesExpression = string | Record<string, unknown> | number
 
@@ -244,6 +245,92 @@ export default class Engine<Name extends string = string> {
 		)
 		this.cache.nodes.set(value, evaluation)
 		return evaluation
+	}
+
+	async asyncEvaluate(value: PublicodesExpression): Promise<EvaluatedNode> {
+		const cachedNode = this.cache.nodes.get(value)
+		if (cachedNode) {
+			return cachedNode
+		}
+		this.context = {
+			...this.context,
+			...parsePublicodes(
+				{
+					'[privé] $EVALUATION':
+						value && typeof value === 'object' && 'nodeKind' in value
+							? { valeur: value }
+							: value,
+				},
+				this.context
+			),
+		}
+		this.checkExperimentalRule(this.context.parsedRules['$EVALUATION'])
+		this.cache._meta = emptyCache()._meta
+
+		const evaluation = await this.asyncEvaluateNode(
+			this.context.parsedRules['$EVALUATION'].explanation.valeur
+		)
+		this.cache.nodes.set(value, evaluation)
+		return evaluation
+	}
+
+	async asyncEvaluateNode<T extends ASTNode>(
+		parsedNode: T
+	): Promise<EvaluatedNode & T> {
+		const cachedNode = this.cache.nodes.get(parsedNode)
+		if (cachedNode !== undefined) {
+			cachedNode.traversedVariables?.forEach((name) =>
+				this.cache._meta.traversedVariablesStack[0]?.add(name)
+			)
+			return cachedNode
+		}
+
+		if (!evaluationFunctions[parsedNode.nodeKind]) {
+			throw new PublicodesError(
+				'EvaluationError',
+				`Unknown "nodeKind": ${parsedNode.nodeKind}`,
+				{ dottedName: '' }
+			)
+		}
+
+		const isTraversedVariablesBoundary =
+			this.cache._meta.traversedVariablesStack.length === 0 ||
+			parsedNode.nodeKind === 'rule'
+
+		if (isTraversedVariablesBoundary) {
+			// Note: we use `unshift` instead of the more usual `push` to reverse the
+			// order of the elements in the stack. This simplify access to the “top
+			// element” with [0], instead of [length - 1]. We could also use the new
+			// method `.at(-1)` but it isn't supported below Node v16.
+			this.cache._meta.traversedVariablesStack.unshift(new Set())
+		}
+
+		if (
+			parsedNode.nodeKind === 'reference' &&
+			parsedNode.dottedName &&
+			parsedNode.dottedName in this.publicParsedRules
+		) {
+			this.cache._meta.traversedVariablesStack[0].add(parsedNode.dottedName)
+		}
+
+		const evaluatedNode = await execWhenIdle(() =>
+			evaluationFunctions[parsedNode.nodeKind].call(this, parsedNode)
+		)
+
+		if (isTraversedVariablesBoundary) {
+			evaluatedNode.traversedVariables = Array.from(
+				this.cache._meta.traversedVariablesStack.shift() ?? []
+			)
+
+			if (this.cache._meta.traversedVariablesStack.length > 0) {
+				evaluatedNode.traversedVariables.forEach((name) => {
+					this.cache._meta.traversedVariablesStack[0].add(name)
+				})
+			}
+		}
+
+		this.cache.nodes.set(parsedNode, evaluatedNode)
+		return evaluatedNode
 	}
 
 	evaluateNode<T extends ASTNode>(parsedNode: T): EvaluatedNode & T {
