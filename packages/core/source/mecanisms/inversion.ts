@@ -167,8 +167,9 @@ export const evaluateInversion: EvaluationFunction<'inversion'> = function (
 		)
 	}
 
-	if (nodeValue === undefined) {
-		this.cache._meta.inversionFail = true
+	if (nodeValue == undefined) {
+		this.cache.inversionFail = true
+		console.log('INVERSION FAILED', nodeValue, this.cache.inversionFail)
 	}
 
 	// Uncomment to display the two attempts and their result
