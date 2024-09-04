@@ -3,6 +3,10 @@ sidebar_position: 1
 title: Principes de base
 ---
 
+<script>
+    import { PanelRightOpen } from 'lucide-svelte';
+</script>
+
 La syntaxe de Publicodes est basée sur le langage
 [Yaml](https://en.wikipedia.org/wiki/YAML).
 
@@ -63,11 +67,9 @@ prix total:
 
 ## Pages d'explications
 
-L'explication des règles est un des objectifs fondamentaux de Publicodes.
+L'explication des calculs est un des objectifs fondamentaux de Publicodes. Un utilitaire permet de générer automatiquement une documentation explorable à partir des règles définies.
 
-Chaque règle se voit générer automatiquement une page explicative
-correspondante dans le front-end, contenant une information facilement digeste
-mise en regard des calculs eux-mêmes.
+Sur ce site, vous pouvez afficher la documentation d'un exemple en cliquant sur le bouton <PanelRightOpen class="inline"/> en haut à droite.
 
 Plusieurs propriétés sont reprises dans ces pages d'explications :
 
@@ -82,12 +84,14 @@ Plusieurs propriétés sont reprises dans ces pages d'explications :
 ticket resto:
   titre: Prise en charge des titres-restaurants
   formule: 4 €/repas
-  description: |-
+  description: |
     L'employeur peut remettre des titres restaurants sous plusieurs formats: ticket papier, carte à puce
     ou appli mobile
-  note: |-
+  note: |
     La valeur a été revalorisée en 2022 pour faire face à l'inflation.
 ```
+
+> [En savoir plus sur les pages d'explication](/docs/manuel/documentation)
 
 ## Conditions booléennes
 
